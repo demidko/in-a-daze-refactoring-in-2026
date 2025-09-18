@@ -25,12 +25,13 @@
   mermaid.initialize({ startOnLoad: true, securityLevel: 'loose' });
 </script>
 
-* Начинается история с древней архитектуры обработки фактур на Фарпосте
+* Начинается история с архитектуры обработки фактур на Фарпосте тянущейся со стародавних времён
 
 ---
 
 # Главный герой — pdf-uploader
 
+* Конвертирует pdf в jpeg
 * Микросервис работал с 2017ого года 8 лет, практически без изменений, почти не требуя поддержки.
 * Однако мир подвержен трансгрессии, которая постоянно ускоряется, не оставляя ничего долговременного и стабильного...
 
@@ -75,16 +76,36 @@
 * Поэтому 27 марта появилась идея как закрыть задачу ничего не делая
   ![width:500px](src/img_5.png)
 * Ведь как известно, лучший код тот — который не был написан
-* Всё в лучших традициях даосизма
+* Всё по канонам даосизма
 * Дело закрыто!
 
 ---
 
-# ...дело закрыть не удалось
+# ...однако дело закрыть не удалось
 
 * Предложение похоронить задачу столкнулось (со вполне справедливым) скепсисом
   ![width:700px](src/img_7.png)
 * Барахолке таймаут в 15 секунд не подоходит
+* И похоже нужно залезть в k8s-под, чтобы узнать реально на что реально затрачивается время, без сетевых задержек
+
+---
+
+<div id="player1"></div>
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/asciinema-player@3/dist/bundle/asciinema-player.css"/>
+<script src="https://cdn.jsdelivr.net/npm/asciinema-player@3/dist/bundle/asciinema-player.min.js"></script>
+<script>
+    AsciinemaPlayer.create(
+      '/src/check-old-speed.cast',
+      document.getElementById('player1'),
+      {
+         loop: false,
+         preload: "auto",
+         rows: 30,
+         cols: 130,
+         theme: "solarized-light"
+      }
+    );
+</script>
 
 ---
 
@@ -112,23 +133,104 @@
 
 ---
 
-<div id="player"></div>
-<!-- 1. Подключаем стили плеера (CSS) с CDN -->
+<div id="player2"></div>
 <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/asciinema-player@3/dist/bundle/asciinema-player.css"/>
 <script src="https://cdn.jsdelivr.net/npm/asciinema-player@3/dist/bundle/asciinema-player.min.js"></script>
 <script>
     AsciinemaPlayer.create(
       '/src/old-code.cast',
-      document.getElementById('player'),
+      document.getElementById('player2'),
       {
          loop: false,
          preload: "auto",
-         rows: 40,
+         rows: 30,
          cols: 130,
          theme: "solarized-light"
       }
     );
 </script>
+
+---
+
+<style>
+section {
+  font-size: 1.5em;
+}
+</style>
+
+# Что мы выяснили
+
+* Сервис сохраняет файл на диск, утилита читает, и пишет файл, сервис снова читает результат...
+* Это совершенно бесполезная промежуточная работа с диском, без которой можно было бы обойтись
+* По результатам дебага прямо на проде, оказалось что на это в среднем уходит 1-2с, плохо, но не бутылочное горлышко
+  ```shell
+  2025-04-01 19:32:39 [http-nio-8080-exec-3] I c.f.p.c.render.ImageMagicRenderer - Temp file /tmp/pdf_renderer8851508053510807606/input.pdf created at 1.459 ms
+  2025-04-01 19:32:50 [http-nio-8080-exec-3] I c.f.p.controller.render.ConvertCmd - Convert /tmp/pdf_renderer8851508053510807606/input.pdf completed at 10.47 s
+  ```
+* Бутылочное горлышко (9 секунд для проблемного файла) это конвертация внешней утилитой
+* Но уже можно сделать вывод, что Java не дает никаких преимуществ в этом кейсе, а служит оберткой
+* За все на самом деле отвечает `ImageMagic`, и дальше имеет смысл копать именно в его сторону
+
+---
+
+<div id="player3"></div>
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/asciinema-player@3/dist/bundle/asciinema-player.css"/>
+<script src="https://cdn.jsdelivr.net/npm/asciinema-player@3/dist/bundle/asciinema-player.min.js"></script>
+<script>
+    AsciinemaPlayer.create(
+      '/src/gs-detected.cast',
+      document.getElementById('player3'),
+      {
+         loop: false,
+         preload: "auto",
+         rows: 30,
+         cols: 130,
+         theme: "solarized-light"
+      }
+    );
+</script>
+
+---
+
+# Главный подозреваемый установлен
+
+* Это движок рендеринга `GhostScript`
+* Воспользуемся силой google и поищем бенчамарки для этого движка
+* Умные люди сделали их за нас
+* https://connect.hyland.com/t5/alfresco-blog/pdf-rendering-engine-performance-and-fidelity-comparison/ba-p/125428
+
+---
+
+# Смотрим альтернативные движки
+
+<style>
+section {
+  font-size: 1.5em;
+}
+</style>
+
+* ```
+  Ghostscript   Native	9.21
+  MuPDF         Native	1.10a
+  Xpdf          Native	3.04
+  Pdfium        Native	2017-04-10
+  Aspose        Java	17.2.0
+  ICEPdf        Java	6.2.0
+  Sejda         Java	3.0.13
+  PDFBox        Java	2.0.5
+  ```
+* ![width:400px](src/bench.png)
+
+---
+
+# Очевидный победитель — pdfium
+
+* Почти самый быстрый (вместе с mupdf в большом отрыве от других)
+* Opensource
+* Поддерживается командой Google
+* Но есть нюанс...
+  ![img.png](img.png)
+* Нет готовой обвязки для jvm
 
 ---
 
@@ -166,12 +268,6 @@
 
 ---
 
-# И вообще, говоря цитатами известных людей
-
-> Хочется движухи!
-
----
-
 # Почему все таки Rust?
 
 * Преимущества нативного кода очевидны, на этом задерживаться не будем.
@@ -181,6 +277,13 @@
     * Это создает для нас очень быструю repl-среду, где можно работать с llm в цикле copy-paste code, copy-paste error
     * В других языках нам пришлось бы не ограничиваясь компиляцией, прогонять много тестов (JS не к ночи будь помянут)
     * А в Rust применимо допущение, если скопилировалось, то с очень большой вероятностью работает
+
+---
+
+# И вообще, говоря цитатами известных людей
+
+> Хочется движухи!
+
 
 ---
 
@@ -212,4 +315,7 @@
 
 # github.com/demidko
 
-* Ставим звездочки, подписываемся
+* Презентация лежит на GitHub
+* Ставим звездочки
+    * Ведь никогда нельзя забывать за что мы здесь все работаем
+* Подписываемся
