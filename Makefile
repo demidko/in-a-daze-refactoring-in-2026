@@ -1,2 +1,2 @@
-build-html-presentation:
-	marp .
+start-presentation:
+	marp --server --html .
