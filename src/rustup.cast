@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "width": 80,
+  "height": 24,
+  "timestamp": 1695050000,
+  "env": {
+    "SHELL": "/bin/bash",
+    "TERM": "xterm-256color"
+  },
+  "stdout": [],
+  "stdout": [
+    [0.0, "stdin", "cargo new hello_rust\n"],
+    [0.5, "stdout", "     Created binary (application) `hello_rust` package\n"],
+    [1.0, "stdin", "cd hello_rust\n"],
+    [1.2, "stdin", "ls\n"],
+    [1.5, "stdout", "Cargo.toml  src\n"],
+    [2.0, "stdin", "ls src\n"],
+    [2.3, "stdout", "main.rs\n"],
+    [2.5, "stdin", "cat src/main.rs\n"],
+    [3.0, "stdout", "fn main() {\n    println!(\"Hello, world!\");\n}\n"]
+  ]
+}
