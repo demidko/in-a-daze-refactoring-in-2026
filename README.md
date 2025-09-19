@@ -289,7 +289,7 @@ section {
 * Можем ли мы доказать что прошедшее действительно происходило?
 * Что если все наши воспоминания подложные?
 * Что если секунду назад наше сознание не существовало, а через секунду прекратит существовать?
-* На этой интересной ноте я и понял, кто сегодня займется рефакторингом...
+* На этой интересной ноте становится ясно, кто сегодня займется рефакторингом...
 
 ---
 
@@ -333,13 +333,27 @@ fn diagnostic(path: &str) {
 
 # Создаем себе repl-среду
 
-```shell
-# собираем образ
-docker build --platform linux/amd64 -t pdf-uploader-diagnostic .
+* Добавляем условие к точке входа
+  ```rust
+  if let Some(path) = env::args().nth(1) {
+    return diagnostic(&path);
+  }
+  ```
+  
+* Как наш repl работает?
+  ```shell
+  # собираем образ
+  docker build --platform linux/amd64 -t pdf-uploader-diagnostic .
 
-# передаем ему файл в репозитории, например qr.pdf
-docker run --platform linux/amd64 -v `pwd`:`pwd` -w `pwd` -it --rm pdf-uploader-diagnostic qr.pdf
-```
+  # передаем ему файл в репозитории, например qr.pdf
+  docker run --platform linux/amd64 -v `pwd`:`pwd` -w `pwd` -it --rm pdf-uploader-diagnostic qr.pdf
+  ```
+  
+---
+
+# Последний штрих
+
+* Пишем ручками конвертацию с нужными параметрами
 
 ---
 
@@ -351,7 +365,7 @@ docker run --platform linux/amd64 -v `pwd`:`pwd` -w `pwd` -it --rm pdf-uploader-
 
 # Почему все таки Rust?
 
-* Преимущества нативного кода очевидны, на этом задерживаться не будем.
+* Преимущества нативного кода очевидны.
 * Но есть кое-что более важное в эпоху llm:
     * Rust благодаря очень хорошей строгой статической типизации имеет тенденцию разворачивать те ошибки, которые в
       другом языке были бы ошибками runtime, в compile time
@@ -367,7 +381,7 @@ docker run --platform linux/amd64 -v `pwd`:`pwd` -w `pwd` -it --rm pdf-uploader-
 
 ---
 
-* ![img_7.png](img_7.png)
+![img_7.png](img_7.png)
 * ```log
    2025-04-11 19:22:06 [INFO] - [d3521b0c-4832-4bef-bf52-93e31d18e703] Converted PDF (875 KiB) to 3 images (215 KiB) in 108.138068ms
    2025-04-11 19:22:06 [INFO] - [d3521b0c-4832-4bef-bf52-93e31d18e703] Uploaded 3 images (215 KiB) to imagestore (1744363326869,1744363326925,1744363326953) in 123.376891ms
@@ -377,16 +391,7 @@ docker run --platform linux/amd64 -v `pwd`:`pwd` -w `pwd` -it --rm pdf-uploader-
 
 # Подводя итоги
 
-* ![img_1.png](img_1.png)
-* ![img_2.png](img_2.png)
-
----
-
-# Подводя итоги
-
-![img_12.png](img_12.png)
-
----
+![img_13.png](img_13.png)
 
 ---
 
@@ -430,9 +435,8 @@ docker run --platform linux/amd64 -v `pwd`:`pwd` -w `pwd` -it --rm pdf-uploader-
 
 # Более оптимистично
 
-* Программирование в тандеме с llm становится нормой,
-  как раньше стали нормой ide.
-* Теперь под рукой всегда есть тот, кому можно делегировать скучные задачи.
+* Программирование в тандеме с llm становится нормой, как раньше стали нормой ide
+* Под рукой всегда есть тот, кому можно делегировать скучную часть работы
 * Можно больше заниматься интересными вещами
 
 ---
