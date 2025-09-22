@@ -2,7 +2,7 @@
 
 История смерти и перерождения микросервиса в суровую эпоху LLM...
 
-Для просмотра презентации потребуется утилита [`marp`](https://github.com/marp-team/marp-cli)
+Для запуска презентации используется утилита [`marp`](https://github.com/marp-team/marp-cli)
 
 ```shell
 marp --server --html .
@@ -422,6 +422,12 @@ fn diagnostic(path: &str) {
 
 * Так у нас и появился раздел RustServices
   ![img_4.png](src/img_4x.png)
+
+---
+
+# Обновленный микросервис на Rust полностью заменил старую версию
+
+![width:700px](src/final.png)
 
 ---
 
